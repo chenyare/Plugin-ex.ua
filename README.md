@@ -11,4 +11,4 @@ The aim of plugins is to download site's pages, parse pages and return videos an
 
 Methods descriptions can be found here https://github.com/NikmanSergey/Plugin-ex.ua/blob/master/Plugin%20ex.ua/libs/Plugin.java
 
-You are welcome as an author of new Perfect Player video plugins :)
+You are welcome to be an author of new Perfect Player video plugins :)
