@@ -165,6 +165,16 @@ public class ExUa implements Plugin {
 	}
 	
 	@Override
+	public boolean isProvideExtraData() {
+		return true;
+	}
+	
+	@Override
+	public String[] getDesriptions() {
+		return null;
+	}
+	
+	@Override
 	public BufferedImage[] getThumbs() {
 		return null;
 	}
