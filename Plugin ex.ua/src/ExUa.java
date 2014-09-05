@@ -282,7 +282,10 @@ public class ExUa implements Plugin {
 			currUrlStr = currUrlStr.substring(0, currUrlStr.lastIndexOf("=") + 1) + (pageNum + 1);
 			
 			boolean res = refresh();
-			if (res && urls == null) return previousPage();
+			if (res && urls == null) {
+				previousPage();
+				return false;
+			}
 			return res;
 		} catch (Exception e) {
 			e.printStackTrace();
