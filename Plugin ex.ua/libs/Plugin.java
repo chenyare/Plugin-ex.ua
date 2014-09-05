@@ -1,11 +1,9 @@
 package player.plugin;
 
-import java.awt.image.BufferedImage;
-
 /**
  *  Perfect Player plugin interface.
  *  @author Sergey Nikitin
- *  @version 0.1.0
+ *  @version 0.1.2
  */
 public interface Plugin {
 	
@@ -16,7 +14,7 @@ public interface Plugin {
 
 	/**
 	 * Download and parse current site's URL.
-	 * Prepare internal data structures (names, URLs, types, thumbs).
+	 * Prepare internal data structures (names, URLs, types, descriptions, thumbs).
 	 * @return true if page was downloaded successfully, otherwise false 
 	 */
 	public boolean refresh();
@@ -38,9 +36,20 @@ public interface Plugin {
 	public boolean[] getTypes();
 	
 	/**
-	 * @return current page links thumbs
+	 * @return current page itemNum's link description (extra data)
 	 */
-	public BufferedImage[] getThumbs();
+	public String getDescription(int itemNum);
+	
+	/**
+	 * Request current page itemNum's link thumb (extra data).
+	 * When thumb is obtained {@link dataObtainedListener.thumbObtained(BufferedImage thumb)} should be called. 
+	 */
+	public void requestThumb(int itemNum, DataObtainedListener dataObtainedListener);
+	
+	/**
+	 * @return true if plugin provides extra data (thumbs, descriptions), otherwise false
+	 */
+	public boolean isProvideExtraData();
 	
 	/**
 	 * Enter to itemNum folder in current page.

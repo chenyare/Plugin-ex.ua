@@ -3,6 +3,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -10,13 +12,18 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.imageio.ImageIO;
+
+import player.plugin.DataObtainedListener;
 import player.plugin.Plugin;
 
 /**
  * Plugin 'ex.ua' for the Perfect Player
- * @version 0.1.0
+ * @version 0.1.05
  */
 public class ExUa implements Plugin {
+	final static private boolean USE_PROXY = false;
+	
 	private String baseURLStr = "http://www.ex.ua";
 	private String currUrlStr = null;
 	private ArrayList<String> alURLsHistory = new ArrayList<String>();
@@ -26,6 +33,47 @@ public class ExUa implements Plugin {
 	private String[] names = null;
 	private String[] urls = null;
 	private boolean[] types = null;
+	private String[] descriptions = null;
+	private String[] thumbsURLs = null;
+	
+	private ThumbObtainer thumbObtainer = null;
+	
+	private class ThumbObtainer extends Thread {
+		private String thumbURL = null;
+		private BufferedImage thumb = null;
+		private DataObtainedListener dataObtainedListener = null;		
+		private boolean needCancel = false;
+		
+		public ThumbObtainer(String thumbURL, DataObtainedListener dataObtainedListener) {
+			if (thumbURL == null || dataObtainedListener == null) return;
+			
+			this.thumbURL = thumbURL;
+			this.dataObtainedListener = dataObtainedListener; 
+		}
+		
+		public void cancel() {
+			needCancel = true;
+		}
+		
+		public boolean checkSameThumbPreviouslyLoaded(String newThumbURL, DataObtainedListener dataObtainedListener) {
+			if (dataObtainedListener != null && thumb != null && thumbURL.equals(newThumbURL)) {
+				dataObtainedListener.thumbObtained(thumb);
+				return true;
+			} else return false;			
+		}
+		
+		@Override
+		public void run() {
+			try {
+				thumb = ImageIO.read(new URL(thumbURL));
+				if (needCancel) return;
+				dataObtainedListener.thumbObtained(thumb);
+			} catch (IOException e) {
+				System.out.println("Error loading thumb image from URL: " + thumbURL);
+				return;
+			}
+		}
+	}
 	
 	public ExUa() {
 		String lang = "ru";
@@ -46,7 +94,10 @@ public class ExUa implements Plugin {
 		pageText = "";
 		try {
 			URL url = new URL(currUrlStr);
-			HttpURLConnection urlConn = (HttpURLConnection)url.openConnection();
+			HttpURLConnection urlConn = null;
+			
+			if (USE_PROXY) urlConn = (HttpURLConnection)url.openConnection(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("192.168.65.113", 3128)));
+    		else urlConn = (HttpURLConnection)url.openConnection();
 			
 			in = new BufferedReader(new InputStreamReader(urlConn.getInputStream(), Charset.forName("UTF-8")));
 			
@@ -104,6 +155,34 @@ public class ExUa implements Plugin {
 			urls = alURLs.toArray(new String[0]);
 			types = new boolean[names.length];
 			for (int i = 0;i < types.length;i++) types[i] = false; // false for Videos
+			
+			// Getting Description and Thumb
+			pattern = Pattern.compile("valign=top>.+?</td>", Pattern.CASE_INSENSITIVE);
+			matcher = pattern.matcher(pageText);
+			if (matcher.find()) {
+				try {
+					String description = pageText.substring(matcher.start(), matcher.end());				 
+					description = description.substring(11);
+					description = description.replaceAll("<br>", "\n");
+					description = description.replaceAll("&nbsp;", "\n");
+					description = description.replaceAll("<.*?>", "");
+					descriptions = new String[urls.length];
+					for (int i = 0;i < urls.length;i++) descriptions[i] = description;
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				try {
+					String thumb = pageText.substring(matcher.start(), matcher.end());
+					thumb = thumb.substring(thumb.indexOf("<img src='") + 10, thumb.indexOf("'", thumb.indexOf("<img src='") + 10));
+					System.out.println(thumb);
+					thumbsURLs = new String[urls.length];
+					for (int i = 0;i < urls.length;i++) thumbsURLs[i] = thumb;
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				
+			}
+			
 		} else {
 			// If Videos not found then try to find Folders
 			names = null;
@@ -144,7 +223,7 @@ public class ExUa implements Plugin {
 			return true;
 		} catch (Exception e) {
 			System.err.println("Error reading from URL: " + currUrlStr);
-			System.err.println(e.getMessage());
+			e.printStackTrace();
 			return false;
 		}
 	}
@@ -170,13 +249,21 @@ public class ExUa implements Plugin {
 	}
 	
 	@Override
-	public String[] getDesriptions() {
-		return null;
+	public String getDescription(int itemNum) {
+		if (descriptions == null || descriptions.length <= itemNum) return null;
+		return descriptions[itemNum];
 	}
 	
 	@Override
-	public BufferedImage[] getThumbs() {
-		return null;
+	public void requestThumb(int itemNum, DataObtainedListener dataObtainedListener) {
+		if (thumbsURLs == null || thumbsURLs.length <= itemNum) return;
+		
+		if (thumbObtainer != null && !thumbObtainer.isAlive() &&
+			thumbObtainer.checkSameThumbPreviouslyLoaded(thumbsURLs[itemNum], dataObtainedListener)) return;
+		
+		if (thumbObtainer != null && thumbObtainer.isAlive()) thumbObtainer.cancel();		
+		thumbObtainer = new ThumbObtainer(thumbsURLs[itemNum], dataObtainedListener);
+		thumbObtainer.start();
 	}
 
 	@Override
