@@ -120,6 +120,8 @@ public class ExUa implements Plugin {
 		names = null;
 		urls = null;
 		types = null;
+		descriptions = null;
+		thumbsURLs = null;
 		
 		pattern = Pattern.compile("</span><br><a href=.+?</a>", Pattern.CASE_INSENSITIVE);
 		matcher = pattern.matcher(pageText);
@@ -161,10 +163,15 @@ public class ExUa implements Plugin {
 			matcher = pattern.matcher(pageText);
 			if (matcher.find()) {
 				try {
-					String description = pageText.substring(matcher.start(), matcher.end());				 
+					String description = pageText.substring(matcher.start(), matcher.end());
+					int nbspIndex = description.indexOf("&nbsp;");
+					if (nbspIndex != -1) description = description.substring(0, nbspIndex);
 					description = description.substring(11);
 					description = description.replaceAll("<br>", "\n");
-					description = description.replaceAll("&nbsp;", "\n");
+					description = description.replaceAll("<p>", "\n\n");
+					description = description.replaceAll("&amp;", "&");
+					description = description.replaceAll("&#39;", "'");
+					description = description.replaceAll("&quot;", "\"");
 					description = description.replaceAll("<.*?>", "");
 					descriptions = new String[urls.length];
 					for (int i = 0;i < urls.length;i++) descriptions[i] = description;
@@ -174,7 +181,6 @@ public class ExUa implements Plugin {
 				try {
 					String thumb = pageText.substring(matcher.start(), matcher.end());
 					thumb = thumb.substring(thumb.indexOf("<img src='") + 10, thumb.indexOf("'", thumb.indexOf("<img src='") + 10));
-					System.out.println(thumb);
 					thumbsURLs = new String[urls.length];
 					for (int i = 0;i < urls.length;i++) thumbsURLs[i] = thumb;
 				} catch (Exception e) {
@@ -188,11 +194,15 @@ public class ExUa implements Plugin {
 			names = null;
 			urls = null;
 			types = null;
+			descriptions = null;
+			thumbsURLs = null;
 			
 			pattern = Pattern.compile("valign=center><a href=.+?</b>", Pattern.CASE_INSENSITIVE);
 			matcher = pattern.matcher(pageText);
 			alNames = new ArrayList<String>();
 			alURLs = new ArrayList<String>();
+			ArrayList<String> alThumbs = new ArrayList<String>();
+			boolean thumbFound = false;
 			while (matcher.find()) {
 				try {
 					String category = pageText.substring(matcher.start(), matcher.end());				
@@ -201,6 +211,15 @@ public class ExUa implements Plugin {
 						replaceAll("&amp;", "&").replaceAll("&#39;", "'").replaceAll("&quot;", "\"");
 					alNames.add(name);
 					alURLs.add(url);
+					
+					String thumbURL = null;					
+					try {
+						if (category.indexOf("<img src='") != -1) {
+							thumbURL = category.substring(category.indexOf("<img src='") + 10, category.indexOf("'", category.indexOf("<img src='") + 10));
+							thumbFound = true;
+						}
+					} catch (Exception e) {}
+					alThumbs.add(thumbURL);										
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -211,6 +230,7 @@ public class ExUa implements Plugin {
 				urls = alURLs.toArray(new String[0]);
 				types = new boolean[names.length];
 				for (int i = 0;i < types.length;i++) types[i] = true; // true for Folders
+				if (thumbFound) thumbsURLs = alThumbs.toArray(new String[0]);				
 			}
 		}
 	}
