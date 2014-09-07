@@ -99,6 +99,10 @@ public class ExUa implements Plugin {
 					int nbspIndex = description.indexOf("&nbsp;");
 					if (nbspIndex != -1) description = description.substring(0, nbspIndex);
 					description = description.substring(11);
+					description = description.replaceAll("<[bB]>", "{"); // begin text highlight
+					description = description.replaceAll("</[bB]>", "}"); // end text highlight
+					description = description.replaceAll("<[hH]1>", "{"); // begin text highlight
+					description = description.replaceAll("</[hH]1>", "}"); // end text highlight
 					description = description.replaceAll("<br>", "\n");
 					description = description.replaceAll("<p>", "\n\n");
 					description = description.replaceAll("&amp;", "&");
@@ -129,11 +133,12 @@ public class ExUa implements Plugin {
 			descriptions = null;
 			thumbsURLs = null;
 			
-			pattern = Pattern.compile("valign=center><a href=.+?</b>", Pattern.CASE_INSENSITIVE);
+			pattern = Pattern.compile("valign=center><a href=.+?</td>", Pattern.CASE_INSENSITIVE);
 			matcher = pattern.matcher(pageText);
 			alNames = new ArrayList<String>();
 			alURLs = new ArrayList<String>();
 			ArrayList<String> alThumbs = new ArrayList<String>();
+			ArrayList<String> alDescriptions = new ArrayList<String>();
 			boolean thumbFound = false;
 			while (matcher.find()) {
 				try {
@@ -151,26 +156,39 @@ public class ExUa implements Plugin {
 							thumbFound = true;
 						}
 					} catch (Exception e) {}
-					alThumbs.add(thumbURL);										
+					alThumbs.add(thumbURL);
+					
+					String description = null;
+					try {
+						if (category.indexOf("class=info>") != -1) {
+							description = category.substring(category.indexOf("class=info>") + 11, category.indexOf("<", category.indexOf("class=info>") + 11));
+						}
+					} catch (Exception e) {}
+					alDescriptions.add(description);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
 			
-			// Getting descriptions
+			// Getting date descriptions
 			pattern = Pattern.compile("&nbsp;<small>.+?<", Pattern.CASE_INSENSITIVE);
 			matcher = pattern.matcher(pageText);
-			ArrayList<String> alDescriptions = new ArrayList<String>();
+			int i = 0;
 			while (matcher.find()) {
 				String dateDescription = pageText.substring(matcher.start(), matcher.end());
-				alDescriptions.add(dateDescription.substring(dateDescription.indexOf(">") + 1, dateDescription.lastIndexOf("<")));
+				dateDescription = dateDescription.substring(dateDescription.indexOf(">") + 1, dateDescription.lastIndexOf("<"));
+				if (i < alDescriptions.size()) {
+					if (alDescriptions.get(i) == null) alDescriptions.set(i, dateDescription);
+					else alDescriptions.set(i, alDescriptions.get(i) + "\n" + dateDescription);
+				}
+				i++;
 			}
 			
 			if (alNames.size() > 0) {
 				names = alNames.toArray(new String[0]);
 				urls = alURLs.toArray(new String[0]);
 				types = new boolean[names.length];
-				for (int i = 0;i < types.length;i++) types[i] = true; // true for Folders
+				for (i = 0;i < types.length;i++) types[i] = true; // true for Folders
 				if (thumbFound) thumbsURLs = alThumbs.toArray(new String[0]);
 				if (alDescriptions.size() == urls.length) descriptions = alDescriptions.toArray(new String[0]);
 			}
