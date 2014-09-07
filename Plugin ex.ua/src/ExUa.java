@@ -157,12 +157,22 @@ public class ExUa implements Plugin {
 				}
 			}
 			
+			// Getting descriptions
+			pattern = Pattern.compile("&nbsp;<small>.+?<", Pattern.CASE_INSENSITIVE);
+			matcher = pattern.matcher(pageText);
+			ArrayList<String> alDescriptions = new ArrayList<String>();
+			while (matcher.find()) {
+				String dateDescription = pageText.substring(matcher.start(), matcher.end());
+				alDescriptions.add(dateDescription.substring(dateDescription.indexOf(">") + 1, dateDescription.lastIndexOf("<")));
+			}
+			
 			if (alNames.size() > 0) {
 				names = alNames.toArray(new String[0]);
 				urls = alURLs.toArray(new String[0]);
 				types = new boolean[names.length];
 				for (int i = 0;i < types.length;i++) types[i] = true; // true for Folders
-				if (thumbFound) thumbsURLs = alThumbs.toArray(new String[0]);				
+				if (thumbFound) thumbsURLs = alThumbs.toArray(new String[0]);
+				if (alDescriptions.size() == urls.length) descriptions = alDescriptions.toArray(new String[0]);
 			}
 		}
 	}
