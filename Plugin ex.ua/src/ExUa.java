@@ -11,7 +11,7 @@ import player.plugin.ThumbObtainer;
 
 /**
  * Plugin 'ex.ua' for the Perfect Player
- * @version 0.1.05
+ * @version 0.1.2
  */
 public class ExUa implements Plugin {
 	private String baseURLStr = "http://www.ex.ua";
