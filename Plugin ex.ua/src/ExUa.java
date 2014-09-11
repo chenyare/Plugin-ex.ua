@@ -1,8 +1,11 @@
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.imageio.ImageIO;
 
 import player.plugin.DataObtainedListener;
 import player.plugin.PageDownloader;
@@ -28,6 +31,8 @@ public class ExUa implements Plugin {
 	
 	private ThumbObtainer thumbObtainer = null;
 	
+	private BufferedImage biPluginIcon = null;
+	
 	public ExUa() {
 		String lang = "ru";
 		try {
@@ -40,6 +45,12 @@ public class ExUa implements Plugin {
 		}
 		
 		currUrlStr = baseURLStr + "/" + lang + "/video?p=0";
+		
+		try {
+			biPluginIcon = ImageIO.read(getClass().getResource("ExUa.png"));
+		} catch (IOException e) {
+			System.err.println("Can't load '" + getPluginName() + "' plugin icon image");
+		}
 	}
 	
 	private void parsePage() {
@@ -250,6 +261,11 @@ public class ExUa implements Plugin {
 	public String getPluginName() {
 		return "ex.ua";
 	}
+	
+	@Override
+	public BufferedImage getPluginIcon() {		
+		return biPluginIcon;
+	}
 
 	@Override
 	public boolean nextPage() {
@@ -284,13 +300,13 @@ public class ExUa implements Plugin {
 	}
 
 	@Override
-	public void selectItem(int itemNum) {
-		if (urls == null || urls.length <= itemNum || types == null || !types[itemNum]) return;
+	public boolean selectItem(int itemNum) {
+		if (urls == null || urls.length <= itemNum || types == null || !types[itemNum]) return false;
 		
 		alURLsHistory.add(currUrlStr);
 		currUrlStr = urls[itemNum];
 		
-		refresh();
+		return refresh();
 	}
 	
 	// Just for plugin local testing

@@ -1,5 +1,7 @@
 package player.plugin;
 
+import java.awt.image.BufferedImage;
+
 /**
  *  Perfect Player plugin interface.
  *  @author Sergey Nikitin
@@ -11,6 +13,11 @@ public interface Plugin {
 	 * @return plugin display name
 	 */
 	public String getPluginName();
+	
+	/**
+	 * @return plugin icon image
+	 */
+	public BufferedImage getPluginIcon();
 
 	/**
 	 * Download and parse current site's URL.
@@ -54,8 +61,9 @@ public interface Plugin {
 	/**
 	 * Enter to itemNum folder in current page.
 	 * Method should call {@link refresh()} in the end.
+	 * @return true if successfully entered folder, otherwise false
 	 */
-	public void selectItem(int itemNum);
+	public boolean selectItem(int itemNum);
 	
 	/**
 	 * Go to previous page.
