@@ -14,7 +14,7 @@ import player.plugin.ThumbObtainer;
 
 /**
  * Plugin 'ex.ua' for the Perfect Player
- * @version 0.1.2
+ * @version 0.1.2.01
  */
 public class ExUa implements Plugin {
 	private String baseURLStr = "http://www.ex.ua";
@@ -120,6 +120,7 @@ public class ExUa implements Plugin {
 					description = description.replaceAll("&#39;", "'");
 					description = description.replaceAll("&quot;", "\"");
 					description = description.replaceAll("<.*?>", "");
+					description = description.replaceAll("\t", " ");					
 					descriptions = new String[urls.length];
 					for (int i = 0;i < urls.length;i++) descriptions[i] = description;
 				} catch (Exception e) {
