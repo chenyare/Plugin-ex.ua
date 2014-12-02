@@ -1,22 +1,15 @@
-import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.imageio.ImageIO;
-
-import player.plugin.DataObtainedListener;
-import player.plugin.PageDownloader;
-import player.plugin.Plugin;
-import player.plugin.ThumbObtainer;
+import com.niklabs.plugin.perfectplayer.PageDownloader;
 
 /**
  * Plugin 'ex.ua' for the Perfect Player
- * @version 0.1.2.01
+ * @version 0.2.0
  */
-public class ExUa implements Plugin {
+public class ExUa implements com.niklabs.plugin.perfectplayer.Plugin {
 	private String baseURLStr = "http://www.ex.ua";
 	private String currUrlStr = null;
 	private ArrayList<String> alURLsHistory = new ArrayList<String>();
@@ -25,32 +18,39 @@ public class ExUa implements Plugin {
 	
 	private String[] names = null;
 	private String[] urls = null;
-	private boolean[] types = null;
+	private int[] types = null;
 	private String[] descriptions = null;
 	private String[] thumbsURLs = null;
 	
-	private ThumbObtainer thumbObtainer = null;
+	private Object icon = null;
 	
-	private BufferedImage biPluginIcon = null;
+	public ExUa() {}
 	
-	public ExUa() {
+	@Override
+	public String getPluginName() {
+		return "ex.ua";
+	}
+	
+	@Override
+	public void init(Properties properties) {
 		String lang = "ru";
-		try {
-			Properties props = new Properties();
-			props.load(getClass().getResourceAsStream("ExUa.ini"));			
-			lang = props.getProperty("Language");
+		
+		if (properties != null) {
+			lang = properties.getProperty("Language");
 			if (lang == null || lang.length() != 2) lang = "ru";
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
 		
 		currUrlStr = baseURLStr + "/" + lang + "/video?p=0";
-		
-		try {
-			biPluginIcon = ImageIO.read(getClass().getResource("ExUa.png"));
-		} catch (IOException e) {
-			System.err.println("Can't load '" + getPluginName() + "' plugin icon image");
-		}
+	}
+	
+	@Override
+	public void setPluginIcon(Object icon) {
+		this.icon = icon;
+	}
+	
+	@Override
+	public Object getPluginIcon() {
+		return icon;
 	}
 	
 	private void parsePage() {
@@ -98,8 +98,8 @@ public class ExUa implements Plugin {
 		if (alNames.size() > 0) {
 			names = alNames.toArray(new String[0]);
 			urls = alURLs.toArray(new String[0]);
-			types = new boolean[names.length];
-			for (int i = 0;i < types.length;i++) types[i] = false; // false for Videos
+			types = new int[names.length];
+			for (int i = 0;i < types.length;i++) types[i] = LINK_TYPE_FILE;
 			
 			// Getting Description and Thumb
 			pattern = Pattern.compile("valign=top>.+?</td>", Pattern.CASE_INSENSITIVE);
@@ -199,8 +199,8 @@ public class ExUa implements Plugin {
 			if (alNames.size() > 0) {
 				names = alNames.toArray(new String[0]);
 				urls = alURLs.toArray(new String[0]);
-				types = new boolean[names.length];
-				for (i = 0;i < types.length;i++) types[i] = true; // true for Folders
+				types = new int[names.length];
+				for (i = 0;i < types.length;i++) types[i] = LINK_TYPE_FOLDER;
 				if (thumbFound) thumbsURLs = alThumbs.toArray(new String[0]);
 				if (alDescriptions.size() == urls.length) descriptions = alDescriptions.toArray(new String[0]);
 			}
@@ -231,8 +231,13 @@ public class ExUa implements Plugin {
 	}
 	
 	@Override
-	public boolean[] getTypes() {
+	public int[] getTypes() {
 		return types;
+	}
+	
+	@Override
+	public String[] getThumbs() {
+		return thumbsURLs;
 	}
 	
 	@Override
@@ -247,30 +252,8 @@ public class ExUa implements Plugin {
 	}
 	
 	@Override
-	public void requestThumb(int itemNum, DataObtainedListener dataObtainedListener) {
-		if (thumbsURLs == null || thumbsURLs.length <= itemNum) return;
-		
-		if (thumbObtainer != null && !thumbObtainer.isAlive() &&
-			thumbObtainer.checkSameThumbPreviouslyLoaded(thumbsURLs[itemNum], dataObtainedListener)) return;
-		
-		if (thumbObtainer != null && thumbObtainer.isAlive()) thumbObtainer.cancel();		
-		thumbObtainer = new ThumbObtainer(thumbsURLs[itemNum], dataObtainedListener);
-		thumbObtainer.start();
-	}
-
-	@Override
-	public String getPluginName() {
-		return "ex.ua";
-	}
-	
-	@Override
-	public BufferedImage getPluginIcon() {		
-		return biPluginIcon;
-	}
-
-	@Override
 	public boolean nextPage() {
-		if (urls == null || urls.length == 0 || !types[0]) return false;
+		if (urls == null || urls.length == 0 || types[0] == LINK_TYPE_FILE) return false;
 		
 		try {
 			int pageNum = 0;
@@ -302,7 +285,8 @@ public class ExUa implements Plugin {
 
 	@Override
 	public boolean selectItem(int itemNum) {
-		if (urls == null || urls.length <= itemNum || types == null || !types[itemNum]) return false;
+		if (urls == null || urls.length <= itemNum || types == null ||
+			types[itemNum] == LINK_TYPE_FILE) return false;
 		
 		alURLsHistory.add(currUrlStr);
 		currUrlStr = urls[itemNum];
@@ -335,6 +319,7 @@ public class ExUa implements Plugin {
 	// Just for plugin local testing
 	public static void main(String[] args) {
 		ExUa exUa = new ExUa();
+		exUa.init(null);
 		exUa.testPlugin();
 	}
 	
