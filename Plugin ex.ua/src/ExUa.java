@@ -3,13 +3,14 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.niklabs.plugin.perfectplayer.PageDownloader;
+import com.niklabs.perfectplayer.plugin.PageDownloader;
+import com.niklabs.perfectplayer.plugin.Plugin;
 
 /**
  * Plugin 'ex.ua' for the Perfect Player
  * @version 0.2.0
  */
-public class ExUa implements com.niklabs.plugin.perfectplayer.Plugin {
+public class ExUa implements Plugin {
 	private String baseURLStr = "http://www.ex.ua";
 	private String currUrlStr = null;
 	private ArrayList<String> alURLsHistory = new ArrayList<String>();

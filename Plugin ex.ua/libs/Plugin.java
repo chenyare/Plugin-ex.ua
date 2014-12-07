@@ -1,4 +1,4 @@
-package com.niklabs.plugin.perfectplayer;
+package com.niklabs.perfectplayer.plugin;
 
 import java.util.Properties;
 
