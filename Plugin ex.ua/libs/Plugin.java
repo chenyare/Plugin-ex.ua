@@ -4,11 +4,12 @@ import java.util.Properties;
 
 /**
  *  Perfect Player plugin interface.
- *  @author Sergey Nikitin
- *  @version 0.2.0
  *
  *  icon.png - plugin icon image
  *  config.ini - plugin properties
+ *  
+ *  @author Sergey Nikitin
+ *  @version 0.3.0 (code 3)
  */
 public interface Plugin {
     static final public int LINK_TYPE_FILE = 1;
@@ -18,6 +19,11 @@ public interface Plugin {
      * @return plugin display name
      */
     public String getPluginName();
+
+    /**
+     * @return plugin version code
+     */
+    public int getPluginVersionCode();
 
     /**
      * Init plugin using properties
@@ -91,5 +97,27 @@ public interface Plugin {
      * @return true if successfully went, otherwise false
      */
     public boolean nextPage();
+
+    /**
+     * Enter to filesLink.
+     * If filesLin is null, then plugin will return to previous safe state
+     * filesLink is String array of 4 elements:
+     * array[0] is current files parent folder name or itemNum's folder name
+     * array[1] is current files parent folder URL or itemNum's folder URL
+     * array[2] is current files parent folder description or itemNum's folder description
+     * array[3] is current files parent folder thumb URL or itemNum's folder thumb URL
+     * Method should call {@link #refresh()} in the end.
+     * @return true if successfully entered folder, otherwise false
+     */
+    public boolean setFilesLink(String[] filesLink);
+
+    /**
+     * @return String array of 4 elements:
+     * array[0] is current files parent folder name or itemNum's folder name
+     * array[1] is current files parent folder URL or itemNum's folder URL
+     * array[2] is current files parent folder description or itemNum's folder description
+     * array[3] is current files parent folder thumb URL or itemNum's folder thumb URL
+     */
+    public String[] getFilesLink(int itemNum);
 
 }

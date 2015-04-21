@@ -8,7 +8,7 @@ import com.niklabs.perfectplayer.plugin.Plugin;
 
 /**
  * Plugin 'ex.ua' for the Perfect Player
- * @version 0.2.0
+ * @version 0.3.0
  */
 public class ExUa implements Plugin {
 	private String baseURLStr = "http://www.ex.ua";
@@ -25,11 +25,23 @@ public class ExUa implements Plugin {
 	
 	private Object icon = null;
 	
+	private String lastName = null;
+	private String lastDescription = null;
+	private String lastThumbURL = null;
+	
+	private String[] filesLink = null;
+	private int savedHistoryURLIndex = -1;
+	
 	public ExUa() {}
 	
 	@Override
 	public String getPluginName() {
 		return "ex.ua";
+	}
+	
+	@Override
+	public int getPluginVersionCode() {
+		return 3;
 	}
 	
 	@Override
@@ -97,6 +109,14 @@ public class ExUa implements Plugin {
 		}
 		
 		if (alNames.size() > 0) {
+			if (lastName != null) {
+				filesLink = new String[4];
+				filesLink[0] = lastName;
+				filesLink[1] = currUrlStr;
+				filesLink[2] = lastDescription;
+				filesLink[3] = lastThumbURL;
+			}
+			
 			names = alNames.toArray(new String[0]);
 			urls = alURLs.toArray(new String[0]);
 			types = new int[names.length];
@@ -278,21 +298,108 @@ public class ExUa implements Plugin {
 	public boolean previousPage() {
 		if (alURLsHistory.size() == 0) return false;
 		
+		setLastData(-1);
+		
 		currUrlStr = alURLsHistory.get(alURLsHistory.size() - 1);
 		alURLsHistory.remove(alURLsHistory.size() - 1);
 		
-		return refresh();
+		boolean res = true;
+		if (savedHistoryURLIndex >= 0 && savedHistoryURLIndex >= alURLsHistory.size()) {
+			savedHistoryURLIndex = -1;
+			res = false;
+		}
+		
+		return res && refresh();
 	}
 
 	@Override
 	public boolean selectItem(int itemNum) {
-		if (urls == null || urls.length <= itemNum || types == null ||
+		if (urls == null || itemNum < 0 || urls.length <= itemNum || types == null ||
 			types[itemNum] == LINK_TYPE_FILE) return false;
+		
+		setLastData(itemNum);
 		
 		alURLsHistory.add(currUrlStr);
 		currUrlStr = urls[itemNum];
 		
 		return refresh();
+	}
+	
+	private void setLastData(int itemNum) {
+		if (itemNum >= 0) {
+			if (names != null && names.length > itemNum) lastName = names[itemNum];
+			else lastName = null;
+			if (thumbsURLs != null && thumbsURLs.length > itemNum) lastThumbURL = thumbsURLs[itemNum];
+			else lastThumbURL = null;
+			if (descriptions != null && descriptions.length > itemNum) lastDescription = descriptions[itemNum];
+			else lastDescription = null;
+		} else {
+			filesLink = null;
+			lastName = null;
+			lastDescription = null;
+			lastThumbURL = null;
+		}
+	}
+	
+	@Override
+	public boolean setFilesLink(String[] filesLink) {
+		setLastData(-1);
+		
+		// Return to safe state
+		while (savedHistoryURLIndex >= 0) {
+			if (savedHistoryURLIndex >= alURLsHistory.size()) {
+				savedHistoryURLIndex = -1;
+			} else {
+				if (alURLsHistory.size() > 0) {
+					currUrlStr = alURLsHistory.get(alURLsHistory.size() - 1);
+					alURLsHistory.remove(alURLsHistory.size() - 1);
+				}
+			}
+		}
+		
+		if (filesLink == null || filesLink[0] == null || filesLink[1] == null) return true;
+		
+		savedHistoryURLIndex = alURLsHistory.size();
+		
+		alURLsHistory.add(currUrlStr);
+		currUrlStr = filesLink[1];
+		
+		lastName = filesLink[0];
+		lastDescription = filesLink[2];
+		lastThumbURL = filesLink[3];
+		
+		boolean res = refresh();
+		if (res && urls == null) {
+			previousPage();
+			return false;
+		}
+		return res;
+	}
+
+	@Override
+	public String[] getFilesLink(int itemNum) {
+		if (types == null || types.length <= itemNum) return null;		
+		if (types[itemNum] == LINK_TYPE_FILE) return filesLink;
+		
+		String[] resFilesLink = new String[4];
+		
+		if (itemNum >= 0 && names != null && itemNum < names.length) {
+			resFilesLink[0] = names[itemNum];
+		} else return null;
+
+		if (urls != null && itemNum < urls.length) {
+			resFilesLink[1] = urls[itemNum];
+		} else return null;
+		
+		if (descriptions != null && itemNum < descriptions.length) {
+			resFilesLink[2] = descriptions[itemNum];
+		}
+		
+		if (thumbsURLs != null && itemNum < thumbsURLs.length) {
+			resFilesLink[3] = thumbsURLs[itemNum];
+		}
+		
+		return resFilesLink;
 	}
 	
 	// Just for plugin local testing
