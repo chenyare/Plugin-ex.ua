@@ -3,7 +3,7 @@ package com.niklabs.perfectplayer.plugin;
 import java.util.Properties;
 
 /**
- *  Perfect Player plugin interface.
+ *  iptv arabic plugin interface.
  *
  *  icon.png - plugin icon image
  *  config.ini - plugin properties
